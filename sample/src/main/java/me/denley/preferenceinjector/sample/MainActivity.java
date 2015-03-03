@@ -1,5 +1,6 @@
 package me.denley.preferenceinjector.sample;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -8,8 +9,6 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.widget.CheckBox;
 import android.widget.SeekBar;
-
-import java.util.Set;
 
 import me.denley.preferenceinjector.InjectPreference;
 import me.denley.preferenceinjector.OnPreferenceChange;
@@ -29,15 +28,8 @@ public class MainActivity extends Activity {
     CheckBox booleanPreferenceDisplay;
     SeekBar integerPreferenceDisplay;
 
-    @InjectPreference("boolean_pref_key")
-    @OnPreferenceChange("boolean_pref_key")
+    @InjectPreference(value = "boolean_pref_key", listen = true)
     boolean booleanPrefValue;
-
-    @InjectPreference("string_pref_key")
-    String stringPrefValue;
-
-    @InjectPreference("string_set_pref_key")
-    Set<String> stringSetPrefValue;
 
     Looper preferenceChangeLooper;
     Handler handler;
@@ -59,16 +51,19 @@ public class MainActivity extends Activity {
         startHandlerOnBackgroundThread();
     }
 
-    @InjectPreference("integer_pref_key")
-    @OnPreferenceChange("integer_pref_key")
+    @InjectPreference(value = "integer_pref_key", listen = true)
     void onNewValue(int newValue){
         integerPreferenceDisplay.setProgress(newValue);
     }
 
-    @InjectPreference("boolean_pref_key")
-    @OnPreferenceChange("boolean_pref_key")
-    void onNewValue2(boolean newValue){
+    @InjectPreference(value = "boolean_pref_key", listen = true)
+    void onNewValue2(boolean prefValue){
         booleanPreferenceDisplay.setChecked(booleanPrefValue);
+    }
+
+    @OnPreferenceChange({"integer_pref_key", "boolean_pref_key"})
+    void onNewValue3(){
+
     }
 
     private void startHandlerOnBackgroundThread(){
@@ -87,6 +82,7 @@ public class MainActivity extends Activity {
         handler.postDelayed(externalPreferenceChanger, PREFERENCE_CHANGE_INITIAL_WAIT_MS);
     }
 
+    @SuppressLint("CommitPrefEdits")
     private void changePreferenceValues(){
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         final boolean booleanPrefValue = !prefs.getBoolean("boolean_pref_key", false);

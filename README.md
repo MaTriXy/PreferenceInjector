@@ -36,7 +36,7 @@ It can be used on any field, like so:
 String valueOfPreference;
 ```
 
-or on any method, like so:
+or on any method, like so (the method parameter is optional):
 ```java
 @OnPreferenceChange("my_preference_key")
 void valueChanged(String valueOfPreference) {
@@ -45,18 +45,24 @@ void valueChanged(String valueOfPreference) {
 }
 ```
 
-Typically, you might use `@InjectPreference` and `OnPreferenceChange` together, like so:
+Be sure to match the field types and method parameter types with the type of value stored for the preference key. This can't be checked at compile time, and may cause runtime exceptions if a different type of value is stored into the `SharedPreferences` file.
+<br/><br/>
+Typically you might want to use `@InjectPreference` and `OnPreferenceChange` together, to both initialize and respond to changes. Instead of adding both annotations, you can simply use the "listen" flag in the `@InjectPreference` annotation, like so:
 ```java
-@InjectPreference("my_preference_key")
-@OnPreferenceChange("my_preference_key")
-void updateForValue(String valueOfPreference) {
+@InjectPreference(value = "my_preference_key", listen = true)
+void setValue(String valueOfPreference) {
     // do something with the value
     ...
 }
 ```
 
-
-Be sure to match the field types and method parameter types with the type of value stored for the preference key. This can't be checked at compile time, and may cause runtime exceptions if a different type of value is stored into the `SharedPreferences` file.
+When annotating a method with `OnPreferenceChange`, you may specify more than one key. In this case, the method will be called when any value for one of the specified keys changes. For example:
+```java
+@OnPreferenceChange({"show_full_names", "use_small_icons"})
+void refreshList() {
+    adapter.notifyDataSetChanged();
+}
+```
 
 #### Triggering Initialization and Listeners
 To bind your preference values and start listening for changes, you must call the following method in your target (a typical place for this is in an `onCreate`, `onCreateView` or `onFinishInflate` method):
@@ -99,7 +105,7 @@ Build Configuration
 
 Add the following line to the gradle dependencies for your module.
 ```groovy
-compile 'me.denley.preferenceinjector:PreferenceInjector:2.1.1'
+compile 'me.denley.preferenceinjector:PreferenceInjector:2.2.0'
 ```
 
 License

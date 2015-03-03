@@ -175,12 +175,13 @@ public class PreferenceInjectorProcessor extends AbstractProcessor {
         }
 
         // Assemble information on the injection point.
-        TypeElement enclosingElement = (TypeElement) annotatedElement.getEnclosingElement();
+        final TypeElement enclosingElement = (TypeElement) annotatedElement.getEnclosingElement();
         final InjectPreference annotation = annotatedElement.getAnnotation(InjectPreference.class);
-        String preferenceKey = annotation.value();
-        String name = annotatedElement.getSimpleName().toString();
+        final String preferenceKey = annotation.value();
+        final String name = annotatedElement.getSimpleName().toString();
 
-        boolean isField = annotatedElement.getKind().isField();
+        final boolean isField = annotatedElement.getKind().isField();
+        final ElementType elementType = isField?ElementType.FIELD:ElementType.METHOD;
         String type;
 
         if(isField){
@@ -190,7 +191,7 @@ public class PreferenceInjectorProcessor extends AbstractProcessor {
             ExecutableElement executableElement = (ExecutableElement) annotatedElement;
             List<? extends VariableElement> params = executableElement.getParameters();
 
-            if(params.size() != 1){
+            if(params.size() != 1) {
                 error(annotatedElement,
                         "Methods annotated with @InjectPreference must have a single parameter. (%s.%s)",
                         enclosingElement.getQualifiedName(),
@@ -202,8 +203,14 @@ public class PreferenceInjectorProcessor extends AbstractProcessor {
         }
 
         PrefValueInjector injector = getOrCreateTargetClass(targetClassMap, enclosingElement);
-        InitBinding binding = new InitBinding(name, type, isField?ElementType.FIELD:ElementType.METHOD);
+
+        InitBinding binding = new InitBinding(name, type, elementType);
         injector.addBinding(preferenceKey, binding);
+
+        if(annotation.listen()) {
+            ListenerBinding listenerBinding = new ListenerBinding(name, type, elementType);
+            injector.addBinding(preferenceKey, listenerBinding);
+        }
 
         // Add the type-erased version to the valid injection targets set.
         erasedTargetNames.add(enclosingElement.toString());
@@ -261,35 +268,67 @@ public class PreferenceInjectorProcessor extends AbstractProcessor {
         }
 
         // Assemble information on the injection point.
-        TypeElement enclosingElement = (TypeElement) annotatedElement.getEnclosingElement();
+        final TypeElement enclosingElement = (TypeElement) annotatedElement.getEnclosingElement();
         final OnPreferenceChange annotation = annotatedElement.getAnnotation(OnPreferenceChange.class);
-        String preferenceKey = annotation.value();
-        String name = annotatedElement.getSimpleName().toString();
+        final String[] preferenceKeys = annotation.value();
+        final String name = annotatedElement.getSimpleName().toString();
 
-        boolean isField = annotatedElement.getKind().isField();
-        String type;
+        final PrefValueInjector injector = getOrCreateTargetClass(targetClassMap, enclosingElement);
 
-        if(isField){
-            type = annotatedElement.asType().toString();
-        }else {
-            // Assemble information on the injection point.
-            ExecutableElement executableElement = (ExecutableElement) annotatedElement;
-            List<? extends VariableElement> params = executableElement.getParameters();
-
-            if(params.size() != 1){
+        if(annotatedElement.getKind().isField()){
+            if(preferenceKeys.length!=1) {
                 error(annotatedElement,
-                        "Methods annotated with @OnPreferenceChange must have a single parameter. (%s.%s)",
+                        "Fields annotated with @OnPreferenceChange must specify a single preference key. (%s.%s)",
                         enclosingElement.getQualifiedName(),
                         name);
                 return;
             }
 
-            type = params.get(0).asType().toString();
-        }
+            final String type = annotatedElement.asType().toString();
+            final ListenerBinding binding = new ListenerBinding(name, type, ElementType.FIELD);
+            injector.addBinding(preferenceKeys[0], binding);
+        }else {
+            // Assemble information on the injection point.
+            final ExecutableElement executableElement = (ExecutableElement) annotatedElement;
+            final List<? extends VariableElement> params = executableElement.getParameters();
 
-        PrefValueInjector injector = getOrCreateTargetClass(targetClassMap, enclosingElement);
-        ListenerBinding binding = new ListenerBinding(name, type, isField?ElementType.FIELD:ElementType.METHOD);
-        injector.addBinding(preferenceKey, binding);
+            switch(preferenceKeys.length) {
+                case 0:
+                    error(annotatedElement,
+                            "@OnPreferenceChange annotations must specify a preference key. (%s.%s)",
+                            enclosingElement.getQualifiedName(),
+                            name);
+                    return;
+                case 1:
+                    String type;
+                    switch(params.size()){
+                        case 0:
+                            type = null;
+                            break;
+                        case 1:
+                            type = params.get(0).asType().toString();
+                            break;
+                        default:
+                            error(annotatedElement,
+                                    "Methods annotated with @OnPreferenceChange with a single key may only have a single parameter. (%s.%s)",
+                                    enclosingElement.getQualifiedName(),
+                                    name);
+                            return;
+                    }
+
+                    ListenerBinding binding = new ListenerBinding(name, type, ElementType.METHOD);
+                    injector.addBinding(preferenceKeys[0], binding);
+                    break;
+                default:
+                    for(String key:preferenceKeys) {
+                        ListenerBinding keyBinding = new ListenerBinding(name, null, ElementType.METHOD);
+                        injector.addBinding(key, keyBinding);
+                    }
+                    break;
+            }
+
+            return;
+        }
 
         // Add the type-erased version to the valid injection targets set.
         erasedTargetNames.add(enclosingElement.toString());
