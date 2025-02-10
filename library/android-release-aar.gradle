@@ -1,13 +1,14 @@
 apply plugin: 'maven'
 
 def groupId = project.GROUP_ID
-def artifactId = project.ARTFACT_ID
+def artifactId = project.ARTIFACT_ID
 def version = project.VERSION_NAME
 
 def localReleaseDest = "${buildDir}/release/${version}"
 
 task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
+    failOnError false
     exclude '**/javax/**'
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
 }

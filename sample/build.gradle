@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 21
+    compileSdkVersion 22
     buildToolsVersion "20.0.0"
 
     defaultConfig {
-        applicationId "me.denley.preferenceinjector.sample"
+        applicationId "me.denley.preferencebinder.sample"
         minSdkVersion 11
-        targetSdkVersion 21
+        targetSdkVersion 22
         versionCode project.VERSION_CODE
         versionName project.VERSION_NAME
     }
@@ -26,5 +26,5 @@ android {
 dependencies {
     compile project(':library')
     provided project(':library')
-    //compile 'me.denley.preferenceinjector:PreferenceInjector:2.1.1' + project.VERSION_NAME
+//    compile(group: project.GROUP_ID, name: project.ARTIFACT_ID, version: project.VERSION_NAME, ext: 'pom')
 }

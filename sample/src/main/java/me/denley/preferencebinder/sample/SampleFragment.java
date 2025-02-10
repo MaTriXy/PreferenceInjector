@@ -1,4 +1,4 @@
-package me.denley.preferenceinjector.sample;
+package me.denley.preferencebinder.sample;
 
 import android.app.Fragment;
 import android.content.SharedPreferences;
@@ -14,34 +14,25 @@ import android.widget.SeekBar;
 
 import java.util.Set;
 
-import me.denley.preferenceinjector.InjectPreference;
-import me.denley.preferenceinjector.OnPreferenceChange;
-import me.denley.preferenceinjector.PreferenceDefault;
-import me.denley.preferenceinjector.PreferenceInjector;
-import me.denley.preferenceinjector.R;
+import me.denley.preferencebinder.BindPref;
+import me.denley.preferencebinder.PreferenceBinder;
+import me.denley.preferencebinder.R;
 
-/**
- * Created by Denley on 25/02/2015.
- */
 public class SampleFragment extends Fragment {
 
     private static final long PREFERENCE_CHANGE_INTERVAL_MS = 500;
     private static final long PREFERENCE_CHANGE_INITIAL_WAIT_MS = 3000;
 
-    @PreferenceDefault("integer_pref_key")
-    static final int INTEGER_PREF_DEFAULT = 50;
-
     CheckBox booleanPreferenceDisplay;
     SeekBar integerPreferenceDisplay;
 
-    @InjectPreference("boolean_pref_key")
-    @OnPreferenceChange("boolean_pref_key")
+    @BindPref("boolean_pref_key")
     boolean booleanPrefValue;
 
-    @InjectPreference("string_pref_key")
+    @BindPref(value = "string_pref_key", listen = false)
     String stringPrefValue;
 
-    @InjectPreference("string_set_pref_key")
+    @BindPref(value = "string_set_pref_key", listen = false)
     Set<String> stringSetPrefValue;
 
     Looper preferenceChangeLooper;
@@ -58,7 +49,7 @@ public class SampleFragment extends Fragment {
         final View view = inflater.inflate(R.layout.activity_main, container, false);
         booleanPreferenceDisplay = (CheckBox) view.findViewById(R.id.pref_boolean);
         integerPreferenceDisplay = (SeekBar) view.findViewById(R.id.pref_integer);
-        PreferenceInjector.inject(this);
+        PreferenceBinder.bind(this);
 
         startHandlerOnBackgroundThread();
         return view;
@@ -67,7 +58,7 @@ public class SampleFragment extends Fragment {
     @Override public void onDestroyView() {
         super.onDestroyView();
 
-        PreferenceInjector.stopListening(this);
+        PreferenceBinder.unbind(this);
 
         if(preferenceChangeLooper != null) {
             preferenceChangeLooper.quit();
@@ -75,14 +66,12 @@ public class SampleFragment extends Fragment {
         super.onDestroy();
     }
 
-    @InjectPreference("integer_pref_key")
-    @OnPreferenceChange("integer_pref_key")
+    @BindPref("integer_pref_key")
     void onNewValue(int newValue){
         integerPreferenceDisplay.setProgress(newValue);
     }
 
-    @InjectPreference("boolean_pref_key")
-    @OnPreferenceChange("boolean_pref_key")
+    @BindPref("boolean_pref_key")
     void onNewValue2(boolean newValue){
         booleanPreferenceDisplay.setChecked(booleanPrefValue);
     }
